@@ -1,0 +1,52 @@
+{
+    "Classification Model": {
+        "classification_report": "              precision    recall  f1-score   support\n\n    Negative       0.67      1.00      0.80        14\n     Neutral       1.00      0.44      0.62         9\n    Positive       0.00      0.00      0.00         2\n\n    accuracy                           0.72        25\n   macro avg       0.56      0.48      0.47        25\nweighted avg       0.73      0.72      0.67        25\n",
+        "confusion_matrix": [
+            [
+                14,
+                0,
+                0
+            ],
+            [
+                5,
+                4,
+                0
+            ],
+            [
+                2,
+                0,
+                0
+            ]
+        ],
+        "confusion_matrix_labels": [
+            "Negative",
+            "Neutral",
+            "Positive"
+        ]
+    },
+    "Vader Model": {
+        "classification_report": "              precision    recall  f1-score   support\n\n    Negative       0.00      0.00      0.00        14\n     Neutral       0.00      0.00      0.00         9\n    Positive       0.08      1.00      0.15         2\n\n    accuracy                           0.08        25\n   macro avg       0.03      0.33      0.05        25\nweighted avg       0.01      0.08      0.01        25\n",
+        "confusion_matrix": [
+            [
+                0,
+                0,
+                14
+            ],
+            [
+                0,
+                0,
+                9
+            ],
+            [
+                0,
+                0,
+                2
+            ]
+        ],
+        "confusion_matrix_labels": [
+            "Negative",
+            "Neutral",
+            "Positive"
+        ]
+    }
+}
