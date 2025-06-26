@@ -1,7 +1,8 @@
 # requirements.txt
+python="3.11"
 pandas
 numpy
-scikit-learn==1.2.2  # Pinning the version is best practice!
+scikit-learn
 nltk
 streamlit
 joblib
