@@ -1,4 +1,9 @@
-streamlit
-nltk
+# requirements.txt
 pandas
-matplotlib
+numpy
+scikit-learn==1.2.2  # Pinning the version is best practice!
+nltk
+streamlit
+joblib
+seaborn         # For plotting
+matplotlib      # For plotting
