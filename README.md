@@ -65,6 +65,7 @@ Note: The primary goal is to demonstrate the model training pipeline using high-
 How to Run This Project:
 --------------------------
 pip install -r requirements.txt
+if there is error, in terminal type pip install joblib streamlit pandas scikit-learn nltk seaborn matplotlib
 Under your working directory, WorkloadSentimentMonitor > python -m streamlit run app/app.py
 
 Links and Websites for Reference:
