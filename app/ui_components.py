@@ -126,7 +126,7 @@ def display_sidebar_info(report_data):
     st.sidebar.header(f"{st.session_state.selected_model} Performance")
     if report_data and st.session_state.selected_model in report_data:
         model_report = report_data[st.session_state.selected_model]
-        st.sidebar.subheader("Classification Report")
+        st.sidebar.subheader("Report")
         st.sidebar.text(model_report['classification_report'])
         st.sidebar.subheader("Confusion Matrix")
         st.sidebar.caption(f"(Rows: Actual, Columns: Predicted)")
