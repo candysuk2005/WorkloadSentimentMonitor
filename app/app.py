@@ -1,72 +1,97 @@
-# ==============================================================================
-# FINAL SIDEBAR CODE - COPY AND PASTE THIS ENTIRE BLOCK INTO YOUR APP
-# ==============================================================================
+import sys
+import os
+import joblib
+import json
 import streamlit as st
-import pandas as pd # Make sure pandas is imported
+import pandas as pd
 
-# --- Sidebar Configuration ---
-st.sidebar.title("About this Dashboard")
+# --- Add 'app' directory and project root to sys.path ---
+_current_script_dir = os.path.dirname(os.path.abspath(__file__))
+if _current_script_dir not in sys.path:
+    sys.path.insert(0, _current_script_dir)
+_project_root = os.path.dirname(_current_script_dir)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+# --- End of path modification ---
 
-st.sidebar.info(
-    "This dashboard is a Proof of Concept for using sentiment analysis "
-    "to help identify potential employee burnout."
-)
+from field_extraction.extract_fields import load_employee_data
+import vader_initializer
+import analysis_utils
+import ui_components
 
-# --- CRITICAL FIX: Hide the raw metrics in an expander ---
-with st.sidebar.expander("Show Baseline Model Performance"):
-    st.write("VADER Model Performance (Baseline)")
-    
-    # --- IMPORTANT ---
-    # Replace these placeholders with your actual DataFrames for the
-    # classification report and confusion matrix.
-    # For example:
-    # report_df = pd.DataFrame(your_classification_report)
-    # confusion_df = pd.DataFrame(your_confusion_matrix, columns=['Negative', 'Neutral', 'Positive'])
+# --- Page Configuration ---
+st.set_page_config(layout="wide", page_title="Employee Burnout Risk PoC")
 
-    # --- Placeholder DataFrames (REPLACE WITH YOURS) ---
-    report_data = {
-        'precision': {'Negative': 0.00, 'Neutral': 0.00, 'Positive': 0.08, 'accuracy': 0.08, 'macro avg': 0.03, 'weighted avg': 0.01},
-        'recall': {'Negative': 0.00, 'Neutral': 0.00, 'Positive': 1.00, 'accuracy': 0.08, 'macro avg': 0.33, 'weighted avg': 0.08},
-        'f1-score': {'Negative': 0.00, 'Neutral': 0.00, 'Positive': 0.15, 'accuracy': 0.08, 'macro avg': 0.05, 'weighted avg': 0.01},
-        'support': {'Negative': 14.0, 'Neutral': 9.0, 'Positive': 2.0, 'accuracy': 0.08, 'macro avg': 25.0, 'weighted avg': 25.0}
-    }
-    confusion_data = {
-        'Negative': {'Negative': 0, 'Neutral': 0, 'Positive': 0},
-        'Neutral': {'Negative': 0, 'Neutral': 0, 'Positive': 0},
-        'Positive': {'Negative': 14, 'Neutral': 9, 'Positive': 2}
-    }
-    report_df = pd.DataFrame(report_data)
-    confusion_df = pd.DataFrame(confusion_data)
-    # --- End of Placeholder DataFrames ---
+# --- Session State Initialization ---
+if 'current_page' not in st.session_state: st.session_state.current_page = 0
+if 'selected_model' not in st.session_state: st.session_state.selected_model = "Classification Model"
 
-    st.dataframe(report_df)
-    st.write("**Confusion Matrix**")
-    st.dataframe(confusion_df)
-    st.caption("Rows: Actual, Columns: Predicted")
+# --- Model and Analyzer Initialization ---
+analyzer = vader_initializer.initialize_vader()
+analysis_utils.set_analyzer_instance(analyzer)
 
 
-# --- STRATEGIC PIVOT: Explain the metrics with a new narrative ---
-st.sidebar.subheader("Model Strategy & Evaluation")
+@st.cache_resource
+def load_classifier_model():
+    model_path = os.path.join(_current_script_dir, 'sentiment_classifier.pkl')
+    try:
+        model = joblib.load(model_path); print("Classification model loaded successfully."); return model
+    except FileNotFoundError:
+        print(f"Error: sentiment_classifier.pkl not found at {model_path}"); return None
 
-st.sidebar.markdown(
-    """
-    **1. Baseline Model Performance (VADER)**
 
-    The metrics shown above are for a standard, off-the-shelf VADER model. As a simple, rule-based model not trained on our specific business context (employee burnout), its performance is expectedly low. It serves as a crucial **baseline** to measure future improvements against.
+@st.cache_data
+def load_report_data():
+    report_path = os.path.join(_current_script_dir, 'classification_report.json')
+    try:
+        with open(report_path, 'r') as f:
+            report = json.load(f)
+        print("Performance report loaded successfully.");
+        return report
+    except FileNotFoundError:
+        print(f"Error: classification_report.json not found at {report_path}"); return None
 
-    **2. Evaluation Strategy for a Custom Model**
 
-    For this specific business problem, a simple accuracy score is misleading. Our primary goal is to **identify every employee who might be at risk**, because the cost of missing someone (a "False Negative") is far higher than the cost of flagging a healthy employee for a check-in (a "False Positive").
+classifier_model = load_classifier_model()
+report_data = load_report_data()
 
-    Therefore, our development strategy prioritizes:
+# --- Main Application UI ---
+st.title("AI for Business Capstone Project: Employee Burnout Risk PoC")
+st.markdown("A Proof of Concept for analyzing workload and sentiment to identify potential employee burnout.")
 
-    -   **High Recall (Negative Class):** This is our North Star metric. We need to find the highest possible percentage of *all actual* negative/burnout-risk reviews. A custom model would be trained and tuned specifically to maximize this.
-    -   **Precision as a Secondary Metric:** While secondary, we would still monitor precision to ensure the tool remains useful and doesn't create excessive "alarm fatigue" for managers.
-    """
-)
+# The sidebar display must come first
+ui_components.display_sidebar_info(report_data)
 
-st.sidebar.caption("Developed as a PoC for AI for Business Capstone.")
+employee_df_full = load_employee_data()
 
-# ==============================================================================
-# END OF SIDEBAR CODE
-# ==============================================================================
+if employee_df_full.empty:
+    st.error("Failed to load or process data. Check logs and file paths.");
+    st.stop()
+else:
+    # --- MODIFIED: Pie chart is now DYNAMIC again based on the selected model ---
+    @st.cache_data
+    def get_cached_sentiment_counts(_df, model_name, _classifier_model):
+        print(f"Calculating full sentiment distribution for {model_name}...")
+        return analysis_utils.get_sentiment_distribution(_df, model_name, _classifier_model)
+
+
+    # The call is now dynamic, using the selection from the sidebar
+    sentiment_counts = get_cached_sentiment_counts(employee_df_full, st.session_state.selected_model, classifier_model)
+
+    ui_components.display_sentiment_distribution_chart(sentiment_counts)
+    st.markdown("---")
+    # --- END MODIFIED ---
+
+    st.success(f"Successfully loaded data for {len(employee_df_full)} reviews.")
+    st.markdown("---")
+    total_items = len(employee_df_full)
+    start_index = st.session_state.current_page * ui_components.ITEMS_PER_PAGE
+    end_index = min(start_index + ui_components.ITEMS_PER_PAGE, total_items)
+    employee_df_page = employee_df_full.iloc[start_index:end_index]
+    with st.expander("View Raw Employee Data (Current Page)"):
+        st.dataframe(employee_df_page)
+    st.markdown("---")
+    if not employee_df_page.empty:
+        for index, emp_row in employee_df_page.iterrows():
+            ui_components.display_review_details(emp_row, index, classifier_model)
+    if total_items > 0: ui_components.display_pagination_controls(total_items)
