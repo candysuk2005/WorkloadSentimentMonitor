@@ -1,3 +1,8 @@
+🚀 Live Demo
+----------------
+Experience the live interactive dashboard here:
+https://wsm-app.streamlit.app/
+
 The key features of Workload Sentiment Monitor project
 -------------------------------------------------------
 External Data Ingestion & Preprocessing:
